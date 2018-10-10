@@ -1,0 +1,33 @@
+from kubernetes import client, config, watch
+
+# Configs can be set in Configuration class directly or using helper utility
+config.load_kube_config()
+
+v1 = client.CoreV1Api()
+count = 100
+w = watch.Watch()
+print("this code will list IP addresses for services which are not part of kube-system")
+for event in w.stream(v1.list_endpoints_for_all_namespaces, _request_timeout=60):
+    print("Event: %s %s.%s" % (event['type'], event['object'].metadata.name, event['object'].metadata.namespace))
+    #print("<<IP addresses for %s.%s starts" %(event['object'].metadata.name, event['object'].metadata.namespace))
+    if event['object'].metadata.namespace != 'kube-system':
+        print("<<IP addresses for %s.%s are" %(event['object'].metadata.name, event['object'].metadata.namespace))
+        subsets = event['object'].subsets
+        if not subsets:
+            print("no IP found")
+        else:
+            for subset in subsets:
+               if not subsets:
+                  print("IP not found")
+               else:
+                                  addresses =subset.addresses
+                   for address in addresses:
+                       print address.ip
+        print(">>")
+        #print("IP addresses for %s.%s ends>>" %(event['object'].metadata.name, event['object'].metadata.namespace))
+        #print p event['object'].subsets[0].addresses[0].ip 
+    count -= 1
+    if not count:
+        w.stop()
+
+print("Ended.")
